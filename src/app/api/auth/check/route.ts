@@ -1,4 +1,6 @@
 // src/app/api/auth/check/route.ts
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
@@ -8,29 +10,28 @@ export async function GET(req: NextRequest) {
     
     if (!token) {
       return NextResponse.json({ 
-        authenticated: false 
-      });
+        authenticated: false,
+        message: 'No token provided'
+      }, { status: 401 });
     }
     
     const decoded = verifyToken(token);
     
     if (!decoded) {
       return NextResponse.json({ 
-        authenticated: false 
-      });
+        authenticated: false,
+        message: 'Invalid token'
+      }, { status: 401 });
     }
     
-    return NextResponse.json({
+    return NextResponse.json({ 
       authenticated: true,
-      user: {
-        id: (decoded as any).id,
-        username: (decoded as any).username,
-        role: (decoded as any).role
-      }
+      user: decoded
     });
   } catch (error) {
     return NextResponse.json({ 
-      authenticated: false 
-    });
+      authenticated: false,
+      message: 'Authentication error'
+    }, { status: 500 });
   }
 }

@@ -3,135 +3,73 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 
-interface Order {
-  id: string;
-  customer: {
-    name: string;
+type Order = {
+  _id: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  shipping: {
+    firstName: string;
+    lastName: string;
     email: string;
+    phone: string;
   };
-  date: string;
-  amount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  items: {
-    id: string;
-    name: string;
-    quantity: number;
-    price: number;
-  }[];
-}
+  items: any[];
+};
 
-export default function AdminOrders() {
+export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    pages: 1,
+    page: 1,
+    limit: 10
+  });
 
-  // Fetch orders (in a real app, this would be an API call)
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockOrders: Order[] = [
-        {
-          id: 'ORD-9385',
-          customer: {
-            name: 'John Smith',
-            email: 'john.smith@example.com'
-          },
-          date: '2023-11-10',
-          amount: 329.99,
-          status: 'processing',
-          items: [
-            { id: 'frame-4', name: 'Gucci Aviator Collection', quantity: 1, price: 279.99 },
-            { id: 'accessory-1', name: 'Premium Glasses Case', quantity: 1, price: 29.99 }
-          ]
-        },
-        {
-          id: 'ORD-9384',
-          customer: {
-            name: 'Emma Johnson',
-            email: 'emma.j@example.com'
-          },
-          date: '2023-11-09',
-          amount: 149.95,
-          status: 'shipped',
-          items: [
-            { id: 'frame-5', name: 'Warby Parker Square Frames', quantity: 1, price: 149.95 }
-          ]
-        },
-        {
-          id: 'ORD-9383',
-          customer: {
-            name: 'Michael Brown',
-            email: 'michael.b@example.com'
-          },
-          date: '2023-11-09',
-          amount: 219.99,
-          status: 'delivered',
-          items: [
-            { id: 'frame-2', name: 'Oakley Rectangle Frames', quantity: 1, price: 199.99 },
-            { id: 'accessory-1', name: 'Premium Glasses Case', quantity: 1, price: 29.99 }
-          ]
-        },
-        {
-          id: 'ORD-9382',
-          customer: {
-            name: 'Sophia Davis',
-            email: 'sophia.d@example.com'
-          },
-          date: '2023-11-08',
-          amount: 499.98,
-          status: 'delivered',
-          items: [
-            { id: 'frame-6', name: 'Tom Ford Premium Frames', quantity: 1, price: 399.99 },
-            { id: 'accessory-1', name: 'Premium Glasses Case', quantity: 1, price: 29.99 },
-            { id: 'contact-1', name: 'Acuvue Oasys Daily Contacts', quantity: 1, price: 79.99 }
-          ]
-        },
-        {
-          id: 'ORD-9381',
-          customer: {
-            name: 'Robert Wilson',
-            email: 'robert.w@example.com'
-          },
-          date: '2023-11-07',
-          amount: 129.99,
-          status: 'cancelled',
-          items: [
-            { id: 'frame-5', name: 'Warby Parker Square Frames', quantity: 1, price: 129.99 }
-          ]
-        }
-      ];
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError('');
       
-      setOrders(mockOrders);
-      setFilteredOrders(mockOrders);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
-
-  // Filter orders based on status and search
-  useEffect(() => {
-    let result = [...orders];
-    
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      result = result.filter(order => order.status === statusFilter);
-    }
-    
-    // Apply search filter (search by order ID or customer name/email)
-    if (search) {
-      const searchLower = search.toLowerCase();
-      result = result.filter(
-        order => 
-          order.id.toLowerCase().includes(searchLower) ||
-          order.customer.name.toLowerCase().includes(searchLower) ||
-          order.customer.email.toLowerCase().includes(searchLower)
+      const response = await fetch(
+        `/api/admin/orders?status=${statusFilter}&page=${page}&limit=10`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      
+      const data = await response.json();
+      setOrders(data.orders);
+      setPagination(data.pagination);
+    } catch (err: any) {
+      console.error('Error fetching orders:', err);
+      setError(err.message || 'Failed to fetch orders');
+    } finally {
+      setLoading(false);
     }
-    
-    setFilteredOrders(result);
-  }, [orders, statusFilter, search]);
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [statusFilter, page]);
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+    setPage(1);
+  };
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -140,7 +78,7 @@ export default function AdminOrders() {
       case 'processing':
         return 'bg-blue-100 text-blue-800';
       case 'shipped':
-        return 'bg-indigo-100 text-indigo-800';
+        return 'bg-purple-100 text-purple-800';
       case 'delivered':
         return 'bg-green-100 text-green-800';
       case 'cancelled':
@@ -150,132 +88,145 @@ export default function AdminOrders() {
     }
   };
 
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    // In a real app, you would call your API to update the order status
-    setOrders(prevOrders => 
-      prevOrders.map(order => 
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-      </div>
-    );
-  }
-
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Orders</h1>
-      
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="search" className="block text-sm text-gray-600 mb-1">Search</label>
-            <input
-              type="text"
-              id="search"
-              placeholder="Search by order ID, customer name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="status" className="block text-sm text-gray-600 mb-1">Status</label>
-            <select
-              id="status"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            >
-              <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Orders</h1>
+        <div className="flex space-x-2">
+          <select
+            className="border border-gray-300 rounded px-3 py-2"
+            value={statusFilter}
+            onChange={handleStatusChange}
+          >
+            <option value="all">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
       </div>
-      
-      {/* Orders */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Order ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Customer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredOrders.map((order) => (
-              <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-indigo-600">{order.id}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{order.customer.name}</div>
-                  <div className="text-sm text-gray-500">{order.customer.email}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{order.date}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">${order.amount.toFixed(2)}</div>
-                  <div className="text-xs text-gray-500">{order.items.length} items</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(order.status)}`}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link href={`/admin/orders/${order.id}`} className="text-indigo-600 hover:text-indigo-900 mr-4">
-                    View
-                  </Link>
-                  
-                  {order.status !== 'cancelled' && (
-                    <select
-                      className="border border-gray-300 rounded text-sm"
-                      value={order.status}
-                      onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+      ) : orders.length > 0 ? (
+        <>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Order ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {orders.map((order) => (
+                  <tr key={order._id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
+                      #{order._id.substring(0, 8)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {order.shipping.firstName} {order.shipping.lastName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {format(new Date(order.createdAt), 'MMM d, yyyy')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      €{order.total.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(order.status)}`}>
+                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <Link href={`/admin/orders/${order._id}`} className="text-indigo-600 hover:text-indigo-900">
+                        View Details
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {pagination.pages > 1 && (
+            <div className="flex justify-center mt-6">
+              <nav className="inline-flex rounded-md shadow">
+                <button
+                  onClick={() => setPage(page > 1 ? page - 1 : 1)}
+                  disabled={page === 1}
+                  className={`relative inline-flex items-center px-4 py-2 rounded-l-md border ${
+                    page === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
+                  } text-sm font-medium`}
+                >
+                  Previous
+                </button>
+                {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`relative inline-flex items-center px-4 py-2 border ${
+                      pageNum === page
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    } text-sm font-medium`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage(page < pagination.pages ? page + 1 : pagination.pages)}
+                  disabled={page === pagination.pages}
+                  className={`relative inline-flex items-center px-4 py-2 rounded-r-md border ${
+                    page === pagination.pages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
+                  } text-sm font-medium`}
+                >
+                  Next
+                </button>
+              </nav>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="bg-white p-8 rounded-lg shadow-sm text-center">
+          <p className="text-lg text-gray-600">No orders found</p>
+          {statusFilter !== 'all' && (
+            <button
+              onClick={() => setStatusFilter('all')}
+              className="mt-2 text-indigo-600 hover:text-indigo-800"
+            >
+              View all orders
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

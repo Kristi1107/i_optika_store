@@ -1,159 +1,96 @@
+// src/app/product/[id]/page.tsx
 "use client"
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 
-// Mock product data - in a real app, this would come from an API or database
-const mockProducts = {
-  'frame-1': {
-    id: 'frame-1',
-    name: 'Ray-Ban Classic Wayfarers',
-    brand: 'Ray-Ban',
-    price: 199,
-    salePrice: null,
-    category: 'sunglasses',
-    frameType: 'full-rim',
-    gender: 'unisex',
-    inStock: true,
-    rating: 4.8,
-    reviewCount: 124,
-    description: 'The iconic Ray-Ban Wayfarer is simply the most recognizable style in sunglasses. The distinctive shape is paired with the traditional Ray-Ban signature logo on the sculpted temples. After its initial design, the Wayfarer quickly endeared itself to Hollywood filmmakers, celebrities, musicians, and artists, becoming an iconic piece of American style.',
-    features: [
-      'UV Protection: 100% UV400 protection against harmful UVA/UVB rays',
-      'Frame Material: High-quality acetate for durability and comfort',
-      'Lens Technology: Crystal lenses with superior clarity and scratch resistance',
-      'Style: Classic, timeless design suitable for all face shapes'
-    ],
-    colors: [
-      { name: 'Black', code: 'bg-gray-900', hexCode: '#111827' },
-      { name: 'Tortoise', code: 'bg-amber-700', hexCode: '#b45309' },
-      { name: 'Blue', code: 'bg-blue-600', hexCode: '#2563eb' }
-    ],
-    sizes: [
-      { size: '50-22', description: 'Small', dimensions: 'Lens: 50mm, Bridge: 22mm, Temple: 150mm' },
-      { size: '52-22', description: 'Medium', dimensions: 'Lens: 52mm, Bridge: 22mm, Temple: 150mm' },
-      { size: '54-22', description: 'Large', dimensions: 'Lens: 54mm, Bridge: 22mm, Temple: 150mm' }
-    ],
-    images: [
-      '/placeholder-product-1.jpg',
-      '/placeholder-product-1-alt.jpg',
-      '/placeholder-product-1-side.jpg',
-      '/placeholder-product-1-worn.jpg'
-    ],
-    reviews: [
-      {
-        id: 'rev1',
-        user: 'Alex J.',
-        rating: 5,
-        date: '2024-01-15',
-        title: 'Classic style that never disappoints',
-        comment: 'I have owned several pairs of Wayfarers over the years and keep coming back to them. The quality is excellent and the style is timeless. These sunglasses go with everything!'
-      },
-      {
-        id: 'rev2',
-        user: 'Sarah M.',
-        rating: 4,
-        date: '2024-02-20',
-        title: 'Great quality, runs a bit large',
-        comment: 'Love these sunglasses, the lenses are crystal clear and the UV protection is great. My only complaint is that they run slightly larger than expected, but still wearable.'
-      },
-      {
-        id: 'rev3',
-        user: 'Michael T.',
-        rating: 5,
-        date: '2024-03-05',
-        title: 'Worth every penny',
-        comment: 'These are my first "real" sunglasses and I am impressed with the quality difference compared to cheaper pairs I have owned. The lenses are incredibly clear and the frames feel solid.'
-      }
-    ]
-  },
-  'frame-4': {
-    id: 'frame-4',
-    name: 'Gucci Aviator Collection',
-    brand: 'Gucci',
-    price: 329,
-    salePrice: 279,
-    category: 'sunglasses',
-    frameType: 'full-rim',
-    gender: 'unisex',
-    inStock: true,
-    rating: 4.7,
-    reviewCount: 53,
-    description: 'Elevate your style with these luxury Gucci aviator sunglasses. Featuring the iconic Gucci design elements and premium materials, these aviators offer both exceptional quality and undeniable fashion appeal. The perfect accessory for those who appreciate refined elegance and contemporary luxury.',
-    features: [
-      'UV Protection: 100% UV400 protection against harmful UVA/UVB rays',
-      'Frame Material: Premium metal frame with signature Gucci detailing',
-      'Lens Technology: Polarized lenses for reduced glare and enhanced vision',
-      'Style: Modern take on the classic aviator design'
-    ],
-    colors: [
-      { name: 'Silver', code: 'bg-gray-400', hexCode: '#9CA3AF' },
-      { name: 'Gold', code: 'bg-yellow-500', hexCode: '#EAB308' },
-      { name: 'Black', code: 'bg-gray-900', hexCode: '#111827' }
-    ],
-    sizes: [
-      { size: '58-14', description: 'Standard', dimensions: 'Lens: 58mm, Bridge: 14mm, Temple: 145mm' },
-      { size: '60-14', description: 'Large', dimensions: 'Lens: 60mm, Bridge: 14mm, Temple: 145mm' }
-    ],
-    images: [
-      '/placeholder-product-4.jpg',
-      '/placeholder-product-4-alt.jpg',
-      '/placeholder-product-4-side.jpg',
-      '/placeholder-product-4-worn.jpg'
-    ],
-    reviews: [
-      {
-        id: 'rev1',
-        user: 'Jonathan R.',
-        rating: 5,
-        date: '2024-02-10',
-        title: 'Exceptional quality and style',
-        comment: 'These Gucci aviators are everything I hoped for. The craftsmanship is exceptional, and they are extremely comfortable to wear all day. Worth the investment!'
-      },
-      {
-        id: 'rev2',
-        user: 'Emma L.',
-        rating: 4,
-        date: '2024-03-15',
-        title: 'Stylish but a bit heavy',
-        comment: 'Love the look and the quality is definitely there. My only complaint is that they aree a bit heavier than other aviators I have owned. Still, they look amazing and the polarized lenses are fantastic.'
-      }
-    ]
-  }
+type Product = {
+  id: string;
+  name: string;
+  brand: string;
+  price: number;
+  salePrice: number | null;
+  category: string;
+  frameType: string;
+  gender: string;
+  inStock: boolean;
+  rating: number;
+  reviewCount: number;
+  description: string;
+  features: string[];
+  colors: { name: string; code: string }[];
+  sizes: { size: string; description: string; dimensions: string }[];
+  images: string[];
+  reviews: {
+    id: string;
+    user: string;
+    rating: number;
+    date: string;
+    title: string;
+    comment: string;
+  }[];
 };
 
 export default function ProductPage() {
   const params = useParams();
   const id = params.id as string;
-  const product = mockProducts[id as keyof typeof mockProducts];
-  
-  // Use the cart context to add items
   const { addToCart } = useCart();
   
-  const [selectedColor, setSelectedColor] = useState(product?.colors[0] || null);
-  const [selectedSize, setSelectedSize] = useState(product?.sizes[0] || null);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  const [selectedColor, setSelectedColor] = useState<any>(null);
+  const [selectedSize, setSelectedSize] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
   
-  if (!product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
-          <p className="mb-6">The product you're looking for doesn't exist or has been removed.</p>
-          <Link href="/products" className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
-            Browse Products
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // Fetch product data
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true);
+      
+      try {
+        const response = await fetch(`/api/products/${id}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Product not found');
+          } else {
+            throw new Error('Failed to fetch product');
+          }
+          return;
+        }
+        
+        const data = await response.json();
+        setProduct(data);
+        
+        // Set initial selected options
+        if (data.colors && data.colors.length > 0) {
+          setSelectedColor(data.colors[0]);
+        }
+        
+        if (data.sizes && data.sizes.length > 0) {
+          setSelectedSize(data.sizes[0]);
+        }
+      } catch (err) {
+        setError('Error loading product. Please try again.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProduct();
+  }, [id]);
   
-  // Modified handleAddToCart function to use the cart context
+  // Handle adding to cart
   const handleAddToCart = () => {
+    if (!product) return;
+    
     addToCart({
       id: product.id,
       name: product.name,
@@ -184,6 +121,28 @@ export default function ProductPage() {
       setQuantity(quantity + 1);
     }
   };
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+  
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">{error || 'Product Not Found'}</h1>
+          <p className="mb-6">The product you're looking for doesn't exist or has been removed.</p>
+          <Link href="/products" className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+            Browse Products
+          </Link>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
@@ -296,7 +255,8 @@ export default function ProductPage() {
                   <button
                     key={index}
                     onClick={() => setSelectedColor(color)}
-                    className={`w-10 h-10 rounded-full ${color.code} ${selectedColor?.name === color.name ? 'ring-2 ring-offset-2 ring-indigo-600' : ''}`}
+                    className={`w-10 h-10 rounded-full ${selectedColor?.name === color.name ? 'ring-2 ring-offset-2 ring-indigo-600' : ''}`}
+                    style={{ backgroundColor: color.code }}
                     title={color.name}
                   ></button>
                 ))}
@@ -358,9 +318,14 @@ export default function ProductPage() {
             <div className="flex space-x-4 mb-8">
               <button 
                 onClick={handleAddToCart}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition"
+                disabled={!product.inStock}
+                className={`flex-1 ${
+                  product.inStock 
+                    ? 'bg-indigo-600 hover:bg-indigo-700' 
+                    : 'bg-gray-400 cursor-not-allowed'
+                } text-white px-6 py-3 rounded-lg font-medium transition`}
               >
-                Add to Cart
+                {product.inStock ? 'Add to Cart' : 'Out of Stock'}
               </button>
               <button className="bg-gray-100 hover:bg-gray-200 p-3 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">

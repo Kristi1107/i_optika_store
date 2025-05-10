@@ -1,7 +1,11 @@
 // src/lib/db.ts
 import { MongoClient } from 'mongodb';
+import dotenv from "dotenv";
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/i_optika';
+// Load environment variables from .env
+dotenv.config();
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const MONGODB_DB = process.env.MONGODB_DB || 'i_optika';
 
 let cachedClient: MongoClient | null = null;
@@ -13,7 +17,8 @@ export async function connectToDatabase() {
   }
 
   if (!cachedClient) {
-    cachedClient = await MongoClient.connect(MONGODB_URI);
+    cachedClient = new MongoClient(MONGODB_URI);
+    await cachedClient.connect();
   }
 
   cachedDb = cachedClient.db(MONGODB_DB);

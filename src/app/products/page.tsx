@@ -1,130 +1,32 @@
+// src/app/products/page.tsx
 "use client"
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// Mock product data (would normally come from an API/database)
-const mockProducts = [
-  {
-    id: 'frame-1',
-    name: 'Ray-Ban Classic Wayfarers',
-    brand: 'Ray-Ban',
-    price: 199,
-    salePrice: null,
-    category: 'sunglasses',
-    frameType: 'full-rim',
-    gender: 'unisex',
-    inStock: true,
-    rating: 4.8,
-    reviewCount: 124,
-    imageUrl: '/placeholder-product-1.jpg',
-    colors: ['Black', 'Tortoise', 'Blue']
-  },
-  {
-    id: 'frame-2',
-    name: 'Oakley Rectangle Frames',
-    brand: 'Oakley',
-    price: 249,
-    salePrice: 199,
-    category: 'eyeglasses',
-    frameType: 'half-rim',
-    gender: 'men',
-    inStock: true,
-    rating: 4.5,
-    reviewCount: 96,
-    imageUrl: '/placeholder-product-2.jpg',
-    colors: ['Black', 'Silver', 'Blue']
-  },
-  {
-    id: 'frame-3',
-    name: 'Prada Designer Sunglasses',
-    brand: 'Prada',
-    price: 299,
-    salePrice: null,
-    category: 'sunglasses',
-    frameType: 'full-rim',
-    gender: 'women',
-    inStock: true,
-    rating: 4.9,
-    reviewCount: 87,
-    imageUrl: '/placeholder-product-3.jpg',
-    colors: ['Black', 'Gold', 'Rose Gold']
-  },
-  {
-    id: 'frame-4',
-    name: 'Gucci Aviator Collection',
-    brand: 'Gucci',
-    price: 329,
-    salePrice: 279,
-    category: 'sunglasses',
-    frameType: 'full-rim',
-    gender: 'unisex',
-    inStock: true,
-    rating: 4.7,
-    reviewCount: 53,
-    imageUrl: '/placeholder-product-4.jpg',
-    colors: ['Silver', 'Gold', 'Black']
-  },
-  {
-    id: 'frame-5',
-    name: 'Warby Parker Square Frames',
-    brand: 'Warby Parker',
-    price: 159,
-    salePrice: null,
-    category: 'eyeglasses',
-    frameType: 'full-rim',
-    gender: 'unisex',
-    inStock: false,
-    rating: 4.6,
-    reviewCount: 42,
-    imageUrl: '/placeholder-product-5.jpg',
-    colors: ['Tortoise', 'Black', 'Blue']
-  },
-  {
-    id: 'frame-6',
-    name: 'Tom Ford Premium Frames',
-    brand: 'Tom Ford',
-    price: 399,
-    salePrice: null,
-    category: 'eyeglasses',
-    frameType: 'rimless',
-    gender: 'men',
-    inStock: true,
-    rating: 4.9,
-    reviewCount: 31,
-    imageUrl: '/placeholder-product-6.jpg',
-    colors: ['Black', 'Gold', 'Silver']
-  },
-  {
-    id: 'contact-1',
-    name: 'Acuvue Oasys Daily Contacts',
-    brand: 'Acuvue',
-    price: 79,
-    salePrice: null,
-    category: 'contact-lenses',
-    inStock: true,
-    rating: 4.8,
-    reviewCount: 212,
-    imageUrl: '/placeholder-contacts.jpg',
-  },
-  {
-    id: 'accessory-1',
-    name: 'Premium Glasses Case',
-    brand: 'I_Optika',
-    price: 29,
-    salePrice: null,
-    category: 'accessories',
-    inStock: true,
-    rating: 4.7,
-    reviewCount: 64,
-    imageUrl: '/placeholder-accessory.jpg',
-  }
-];
+// Define the Product type
+type Product = {
+  _id: string;
+  id?: string;
+  name: string;
+  brand: string;
+  price: number;
+  salePrice: number | null;
+  category: string;
+  frameType?: string;
+  gender?: string;
+  inStock: boolean;
+  rating: number;
+  reviewCount: number;
+  description?: string;
+  features?: string[];
+  colors?: { name: string; code: string }[];
+  sizes?: { size: string; description: string; dimensions?: string }[];
+  images: string[];
+};
 
-// Filter options
-const brands = ['All Brands', 'Ray-Ban', 'Oakley', 'Prada', 'Gucci', 'Warby Parker', 'Tom Ford', 'Acuvue'];
-const frameTypes = ['All Types', 'full-rim', 'half-rim', 'rimless'];
+// Define Gender options
 const genders = ['All', 'men', 'women', 'unisex'];
 
 export default function ProductsPage() {
@@ -147,84 +49,62 @@ export default function ProductsPage() {
   });
   
   // State for products and UI
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [sortBy, setSortBy] = useState(sortParam || 'featured');
+  const [brands, setBrands] = useState(['All Brands']);
+  const [frameTypes, setFrameTypes] = useState(['All Types']);
+  const [loading, setLoading] = useState(true);
   
-  // Apply filters and sorting
+  // Fetch products from the API
   useEffect(() => {
-    let filteredProducts = [...mockProducts];
-    
-    // Filter by category
-    if (filters.category) {
-      filteredProducts = filteredProducts.filter(
-        product => product.category === filters.category
-      );
-    }
-    
-    // Filter by search query
-    if (searchQuery) {
-      filteredProducts = filteredProducts.filter(
-        product => 
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          product.brand.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    // Filter by brand
-    if (filters.brand !== 'All Brands') {
-      filteredProducts = filteredProducts.filter(
-        product => product.brand === filters.brand
-      );
-    }
-    
-    // Filter by frame type
-    if (filters.frameType !== 'All Types') {
-      filteredProducts = filteredProducts.filter(
-        product => product.frameType === filters.frameType
-      );
-    }
-    
-    // Filter by gender
-    if (filters.gender !== 'All') {
-      filteredProducts = filteredProducts.filter(
-        product => product.gender === filters.gender
-      );
-    }
-    
-    // Filter by price range
-    filteredProducts = filteredProducts.filter(
-      product => {
-        const price = product.salePrice || product.price;
-        return price >= filters.priceRange[0] && price <= filters.priceRange[1];
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        // Build the query string
+        const queryParams = new URLSearchParams();
+        if (filters.category) queryParams.set('category', filters.category);
+        if (searchQuery) queryParams.set('search', searchQuery);
+        if (filters.brand !== 'All Brands') queryParams.set('brand', filters.brand);
+        if (filters.frameType !== 'All Types') queryParams.set('frameType', filters.frameType);
+        if (filters.gender !== 'All') queryParams.set('gender', filters.gender);
+        queryParams.set('minPrice', filters.priceRange[0].toString());
+        queryParams.set('maxPrice', filters.priceRange[1].toString());
+        if (filters.inStockOnly) queryParams.set('inStock', 'true');
+        queryParams.set('sort', sortBy);
+        
+        // Fetch products
+        const response = await fetch(`/api/products?${queryParams.toString()}`);
+        if (!response.ok) throw new Error('Failed to fetch products');
+        
+        const data = await response.json();
+        setProducts(data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
       }
-    );
+    };
     
-    // Filter by stock
-    if (filters.inStockOnly) {
-      filteredProducts = filteredProducts.filter(product => product.inStock);
-    }
-    
-    // Sort products
-    switch (sortBy) {
-      case 'price-low-high':
-        filteredProducts.sort((a, b) => (a.salePrice || a.price) - (b.salePrice || b.price));
-        break;
-      case 'price-high-low':
-        filteredProducts.sort((a, b) => (b.salePrice || b.price) - (a.salePrice || a.price));
-        break;
-      case 'rating':
-        filteredProducts.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'newest':
-        // In a real app, you'd sort by date
-        break;
-      default:
-        // Featured - no change to order
-        break;
-    }
-    
-    setProducts(filteredProducts);
+    fetchProducts();
   }, [filters, sortBy, searchQuery]);
+  
+  // Fetch brands and frame types for filters (run once)
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/product-options');
+        if (!response.ok) throw new Error('Failed to fetch options');
+        
+        const data = await response.json();
+        setBrands(['All Brands', ...data.brands]);
+        setFrameTypes(['All Types', ...data.frameTypes]);
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
   
   // Update URL when category changes
   const updateCategory = (category: string) => {
@@ -406,8 +286,12 @@ export default function ProductsPage() {
               </div>
             </div>
             
-            {/* Products */}
-            {products.length === 0 ? (
+            {/* Loading State */}
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+              </div>
+            ) : products.length === 0 ? (
               <div className="bg-white p-8 rounded-lg shadow-sm text-center">
                 <h3 className="text-xl font-semibold mb-2 text-black">No products found</h3>
                 <p className="text-black">Try adjusting your filters or search terms</p>
@@ -415,13 +299,21 @@ export default function ProductsPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map(product => (
-                  <div key={product.id} className="bg-white rounded-lg shadow-sm overflow-hidden group">
-                    <Link href={`/product/${product.id}`}>
+                  <div key={product._id || product.id} className="bg-white rounded-lg shadow-sm overflow-hidden group">
+                    <Link href={`/product/${product._id || product.id}`}>
                       <div className="aspect-square bg-gray-200 relative">
-                        {/* Replace with actual product image */}
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-400">[Product Image]</span>
-                        </div>
+                        {/* Product image */}
+                        {product.images && product.images.length > 0 ? (
+                          <img 
+                            src={product.images[0]} 
+                            alt={product.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-400">[Product Image]</span>
+                          </div>
+                        )}
                         
                         {product.salePrice && (
                           <div className="absolute top-4 left-4 bg-red-500 text-white text-sm font-medium px-3 py-1 rounded-full">
@@ -438,7 +330,7 @@ export default function ProductsPage() {
                     </Link>
                     
                     <div className="p-4">
-                      <Link href={`/product/${product.id}`}>
+                      <Link href={`/product/${product._id || product.id}`}>
                         <h3 className="font-medium text-lg mb-1 text-black hover:text-indigo-600 transition">
                           {product.name}
                         </h3>
@@ -488,7 +380,7 @@ export default function ProductsPage() {
                               return (
                                 <div 
                                   key={i} 
-                                  className={`w-4 h-4 rounded-full ${colorMap[color] || 'bg-gray-500'} ${i === 0 ? 'ring-1 ring-gray-300' : ''}`}
+                                  className={`w-4 h-4 rounded-full ${colorMap[color.name] || 'bg-gray-500'} ${i === 0 ? 'ring-1 ring-gray-300' : ''}`}
                                 />
                               );
                             })}
